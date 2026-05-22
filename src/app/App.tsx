@@ -1,533 +1,563 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+type PostStatus = 'published' | 'pending' | 'hidden';
+
+interface Comment {
+  id: string;
+  author: string;
+  content: string;
+  date: string;
+}
 
 interface Post {
+  id: string;
   author: string;
   title: string;
   category: string;
   content: string;
   date: string;
+  imageUrl?: string;
+  likes: number;
+  reports: number;
+  status: PostStatus;
+  comments: Comment[];
 }
+
+const STORAGE_KEY = 'ferroanelPostsV2';
+const ADMIN_CODE = 'ferroanel2026';
+
+const CATEGORIES = [
+  'Todos',
+  'Infraestrutura Ferroviaria',
+  'Logistica',
+  'Mobilidade Urbana',
+  'Operacoes Ferroviarias',
+  'Projetos Ferroanel',
+  'Economia',
+  'Urbanismo',
+  'Pesquisa Tecnica'
+];
 
 const INITIAL_POSTS: Post[] = [
   {
-    author: 'Administração',
-    title: 'Como o Ferroanel pode transformar a logística paulista',
-    category: 'Logística',
-    content: 'O Ferroanel possui potencial para reorganizar o transporte ferroviário de cargas no Estado de São Paulo. Atualmente, muitos trens dividem espaço com linhas urbanas de passageiros, gerando conflitos operacionais e reduzindo a eficiência logística.\n\nCom a implantação do Ferroanel, o transporte de cargas poderá ser desviado das áreas urbanas, reduzindo congestionamentos ferroviários e melhorando a circulação de mercadorias entre regiões industriais e portos estratégicos.',
-    date: new Date().toLocaleString('pt-BR')
+    id: 'post-logistica-ferroanel',
+    author: 'Administracao',
+    title: 'Como o Ferroanel pode transformar a logistica paulista',
+    category: 'Logistica',
+    content:
+      'O Ferroanel possui potencial para reorganizar o transporte ferroviario de cargas no Estado de Sao Paulo. Atualmente, muitos trens dividem espaco com linhas urbanas de passageiros, gerando conflitos operacionais e reduzindo a eficiencia logistica.\n\nCom a implantacao do Ferroanel, o transporte de cargas pode ser desviado das areas urbanas, reduzindo gargalos ferroviarios e melhorando a circulacao de mercadorias entre regioes industriais e portos estrategicos.',
+    date: new Date().toLocaleString('pt-BR'),
+    imageUrl:
+      'https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=1200&q=80',
+    likes: 12,
+    reports: 0,
+    status: 'published',
+    comments: [
+      {
+        id: 'comment-logistica-1',
+        author: 'Leitor Ferroviario',
+        content: 'Esse ponto da separacao entre cargas e passageiros e essencial para a eficiencia do sistema.',
+        date: new Date().toLocaleString('pt-BR')
+      }
+    ]
   },
   {
+    id: 'post-economia-ferroanel',
     author: 'Equipe Ferroanel',
-    title: 'Benefícios econômicos do Ferroanel para São Paulo',
+    title: 'Beneficios economicos do Ferroanel para Sao Paulo',
     category: 'Economia',
-    content: 'O projeto do Ferroanel pode gerar impactos positivos significativos para a economia paulista. A melhoria da infraestrutura ferroviária reduz custos logísticos, aumenta a competitividade industrial e fortalece corredores de exportação.\n\nAlém disso, o desenvolvimento ferroviário tende a estimular investimentos privados, expansão industrial e geração de empregos ligados ao setor logístico.',
-    date: new Date().toLocaleString('pt-BR')
+    content:
+      'O projeto do Ferroanel pode gerar impactos positivos significativos para a economia paulista. A melhoria da infraestrutura ferroviaria reduz custos logisticos, aumenta a competitividade industrial e fortalece corredores de exportacao.\n\nA expansao ferroviaria tambem tende a estimular investimentos privados, crescimento industrial e geracao de empregos ligados ao setor logistico.',
+    date: new Date().toLocaleString('pt-BR'),
+    imageUrl:
+      'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=1200&q=80',
+    likes: 8,
+    reports: 0,
+    status: 'published',
+    comments: []
   },
   {
+    id: 'post-mobilidade-ferroanel',
     author: 'Editor Oficial',
     title: 'Impactos sociais e urbanos do Ferroanel',
     category: 'Mobilidade Urbana',
-    content: 'A separação entre transporte urbano de passageiros e transporte ferroviário de cargas pode melhorar significativamente a mobilidade urbana da Região Metropolitana de São Paulo.\n\nO Ferroanel também pode reduzir riscos operacionais em áreas urbanas, diminuir interferências no trânsito e ampliar a eficiência do sistema ferroviário paulista.',
-    date: new Date().toLocaleString('pt-BR')
+    content:
+      'A separacao entre transporte urbano de passageiros e transporte ferroviario de cargas pode melhorar significativamente a mobilidade urbana da Regiao Metropolitana de Sao Paulo.\n\nO Ferroanel tambem pode reduzir riscos operacionais em areas urbanas, diminuir interferencias no transito e ampliar a eficiencia do sistema ferroviario paulista.',
+    date: new Date().toLocaleString('pt-BR'),
+    imageUrl:
+      'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=1200&q=80',
+    likes: 10,
+    reports: 0,
+    status: 'published',
+    comments: []
   }
 ];
+
+const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+const cardStyle = {
+  background: 'white',
+  border: '1px solid rgba(148, 163, 184, 0.18)',
+  borderRadius: '8px',
+  boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)'
+};
+
+const inputStyle = {
+  width: '100%',
+  border: '1px solid #dbe4ee',
+  background: '#f8fbff',
+  padding: '13px 14px',
+  borderRadius: '8px',
+  fontSize: '0.98rem',
+  color: '#0f172a',
+  boxSizing: 'border-box' as const
+};
 
 export default function App() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [author, setAuthor] = useState('');
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('Infraestrutura Ferroviária');
+  const [category, setCategory] = useState('Infraestrutura Ferroviaria');
   const [content, setContent] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategory, setActiveCategory] = useState('Todos');
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, { author: string; content: string }>>({});
+  const [adminCode, setAdminCode] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const savedPosts = localStorage.getItem('ferroanelPosts');
+    const savedPosts = localStorage.getItem(STORAGE_KEY);
     if (savedPosts) {
       setPosts(JSON.parse(savedPosts));
-    } else {
-      setPosts(INITIAL_POSTS);
-      localStorage.setItem('ferroanelPosts', JSON.stringify(INITIAL_POSTS));
+      return;
     }
+
+    const oldPosts = localStorage.getItem('ferroanelPosts');
+    if (oldPosts) {
+      const migratedPosts = JSON.parse(oldPosts).map((post: Partial<Post>, index: number) => ({
+        id: post.id || `migrated-${index}-${newId()}`,
+        author: post.author || 'Visitante',
+        title: post.title || 'Anotacao sem titulo',
+        category: post.category || 'Pesquisa Tecnica',
+        content: post.content || '',
+        date: post.date || new Date().toLocaleString('pt-BR'),
+        imageUrl: post.imageUrl || '',
+        likes: post.likes || 0,
+        reports: post.reports || 0,
+        status: post.status || 'published',
+        comments: post.comments || []
+      }));
+      setPosts(migratedPosts);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedPosts));
+      return;
+    }
+
+    setPosts(INITIAL_POSTS);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_POSTS));
   }, []);
+
+  const savePosts = (updatedPosts: Post[]) => {
+    setPosts(updatedPosts);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPosts));
+  };
 
   const publishPost = () => {
     if (!author.trim() || !title.trim() || !content.trim()) {
-      alert('Preencha todos os campos.');
+      alert('Preencha nome, titulo e conteudo.');
+      return;
+    }
+
+    if (content.trim().length < 30) {
+      alert('Escreva uma anotacao um pouco mais completa, com pelo menos 30 caracteres.');
       return;
     }
 
     const newPost: Post = {
+      id: newId(),
       author: author.trim(),
       title: title.trim(),
       category,
       content: content.trim(),
-      date: new Date().toLocaleString('pt-BR')
+      imageUrl: imageUrl.trim(),
+      date: new Date().toLocaleString('pt-BR'),
+      likes: 0,
+      reports: 0,
+      status: 'published',
+      comments: []
     };
 
-    const updatedPosts = [...posts, newPost];
-    setPosts(updatedPosts);
-    localStorage.setItem('ferroanelPosts', JSON.stringify(updatedPosts));
-
+    savePosts([newPost, ...posts]);
     setAuthor('');
     setTitle('');
     setContent('');
-
-    alert('Anotação publicada com sucesso!');
+    setImageUrl('');
+    alert('Anotacao publicada com sucesso!');
   };
 
-  const filteredPosts = posts.filter(post => {
-    const term = searchTerm.toLowerCase();
-    return (
-      post.title.toLowerCase().includes(term) ||
-      post.content.toLowerCase().includes(term) ||
-      post.category.toLowerCase().includes(term) ||
-      post.author.toLowerCase().includes(term)
+  const updatePost = (postId: string, changes: Partial<Post>) => {
+    savePosts(posts.map((post) => (post.id === postId ? { ...post, ...changes } : post)));
+  };
+
+  const deletePost = (postId: string) => {
+    const confirmed = confirm('Excluir esta publicacao?');
+    if (confirmed) {
+      savePosts(posts.filter((post) => post.id !== postId));
+    }
+  };
+
+  const likePost = (postId: string) => {
+    savePosts(posts.map((post) => (post.id === postId ? { ...post, likes: post.likes + 1 } : post)));
+  };
+
+  const reportPost = (postId: string) => {
+    savePosts(posts.map((post) => (post.id === postId ? { ...post, reports: post.reports + 1 } : post)));
+    alert('Obrigado. A publicacao foi marcada para revisao.');
+  };
+
+  const addComment = (postId: string) => {
+    const draft = commentDrafts[postId];
+    if (!draft?.author.trim() || !draft?.content.trim()) {
+      alert('Preencha nome e comentario.');
+      return;
+    }
+
+    const newComment: Comment = {
+      id: newId(),
+      author: draft.author.trim(),
+      content: draft.content.trim(),
+      date: new Date().toLocaleString('pt-BR')
+    };
+
+    savePosts(
+      posts.map((post) =>
+        post.id === postId ? { ...post, comments: [...post.comments, newComment] } : post
+      )
     );
-  });
+    setCommentDrafts({ ...commentDrafts, [postId]: { author: '', content: '' } });
+  };
+
+  const visiblePosts = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return posts.filter((post) => {
+      const matchesStatus = post.status === 'published';
+      const matchesCategory = activeCategory === 'Todos' || post.category === activeCategory;
+      const matchesSearch =
+        !term ||
+        post.title.toLowerCase().includes(term) ||
+        post.content.toLowerCase().includes(term) ||
+        post.category.toLowerCase().includes(term) ||
+        post.author.toLowerCase().includes(term);
+
+      return matchesStatus && matchesCategory && matchesSearch;
+    });
+  }, [posts, searchTerm, activeCategory]);
+
+  const featuredPost = visiblePosts[0];
+  const recentPosts = visiblePosts.slice(featuredPost ? 1 : 0);
+  const pendingCount = posts.filter((post) => post.status === 'pending' || post.reports > 0).length;
+
+  const enterAdminMode = () => {
+    if (adminCode === ADMIN_CODE) {
+      setIsAdmin(true);
+      setAdminCode('');
+    } else {
+      alert('Codigo administrativo incorreto.');
+    }
+  };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#eef3f8', color: '#1e293b' }}>
-      {/* Header */}
-      <header style={{
-        background: 'linear-gradient(135deg, #ffffff, #dcefff)',
-        padding: '50px 8%',
-        borderBottom: '1px solid #cbd5e1',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
-      }}>
-        <div style={{ maxWidth: '1400px', margin: 'auto' }}>
-          <h1 style={{ fontSize: '3rem', color: '#0f172a', marginBottom: '15px', fontWeight: '700' }}>
-            FERROANEL HUB
-          </h1>
+    <div style={{ minHeight: '100vh', background: '#eef3f8', color: '#1e293b', fontFamily: 'Inter, Arial, sans-serif' }}>
+      <header
+        style={{
+          backgroundImage:
+            'linear-gradient(90deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.52)), url("https://images.unsplash.com/photo-1494515843206-f3117d3f51b7?auto=format&fit=crop&w=1800&q=80")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          color: 'white',
+          padding: '42px 6% 36px'
+        }}
+      >
+        <nav
+          style={{
+            maxWidth: '1280px',
+            margin: '0 auto 42px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '18px',
+            flexWrap: 'wrap'
+          }}
+        >
+          <strong style={{ fontSize: '1.1rem', letterSpacing: '0.08em' }}>FERROANEL HUB</strong>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {['Posts', 'Categorias', 'Publicar', 'Moderacao'].map((item) => (
+              <a key={item} href={`#${item.toLowerCase()}`} style={{ color: 'white', textDecoration: 'none', fontWeight: 600 }}>
+                {item}
+              </a>
+            ))}
+          </div>
+        </nav>
 
-          <p style={{ maxWidth: '900px', lineHeight: '1.8', color: '#475569', fontSize: '1.05rem' }}>
-            Portal moderno de estudos ferroviários voltado ao Ferroanel,
-            logística paulista, infraestrutura ferroviária e impactos econômicos.
-            A plataforma reúne análises técnicas, artigos especializados,
-            pesquisas logísticas e informações sobre o desenvolvimento ferroviário do Estado de São Paulo.
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <p style={{ margin: '0 0 12px', color: '#bfdbfe', fontWeight: 700 }}>Blog colaborativo ferroviario</p>
+          <h1 style={{ maxWidth: '760px', margin: 0, fontSize: 'clamp(2.4rem, 5vw, 4.6rem)', lineHeight: 1.05 }}>
+            Estudos, ideias e notas publicas sobre o Ferroanel
+          </h1>
+          <p style={{ maxWidth: '760px', lineHeight: 1.75, color: '#e2e8f0', fontSize: '1.08rem' }}>
+            Publique anotacoes, leia analises, comente pesquisas e acompanhe discussoes sobre logistica, mobilidade,
+            infraestrutura ferroviaria e desenvolvimento paulista.
           </p>
 
-          <div style={{ marginTop: '25px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-            <div style={{
-              background: 'white',
-              padding: '18px 24px',
-              borderRadius: '18px',
-              boxShadow: '0 5px 15px rgba(0,0,0,0.06)',
-              minWidth: '220px'
-            }}>
-              <strong style={{ display: 'block', color: '#0f172a', fontSize: '1.2rem', marginBottom: '5px' }}>
-                Logística Inteligente
-              </strong>
-              <span style={{ color: '#64748b', fontSize: '0.95rem' }}>
-                Estudos sobre eficiência ferroviária e transporte de cargas.
-              </span>
-            </div>
-
-            <div style={{
-              background: 'white',
-              padding: '18px 24px',
-              borderRadius: '18px',
-              boxShadow: '0 5px 15px rgba(0,0,0,0.06)',
-              minWidth: '220px'
-            }}>
-              <strong style={{ display: 'block', color: '#0f172a', fontSize: '1.2rem', marginBottom: '5px' }}>
-                Impactos Econômicos
-              </strong>
-              <span style={{ color: '#64748b', fontSize: '0.95rem' }}>
-                Análises sobre desenvolvimento regional e industrial.
-              </span>
-            </div>
-
-            <div style={{
-              background: 'white',
-              padding: '18px 24px',
-              borderRadius: '18px',
-              boxShadow: '0 5px 15px rgba(0,0,0,0.06)',
-              minWidth: '220px'
-            }}>
-              <strong style={{ display: 'block', color: '#0f172a', fontSize: '1.2rem', marginBottom: '5px' }}>
-                Infraestrutura
-              </strong>
-              <span style={{ color: '#64748b', fontSize: '0.95rem' }}>
-                Projetos ferroviários modernos e expansão logística.
-              </span>
-            </div>
-
-            <div style={{
-              background: 'white',
-              padding: '18px 24px',
-              borderRadius: '18px',
-              boxShadow: '0 5px 15px rgba(0,0,0,0.06)',
-              minWidth: '220px'
-            }}>
-              <strong style={{ display: 'block', color: '#0f172a', fontSize: '1.2rem', marginBottom: '5px' }}>
-                Publicação Aberta
-              </strong>
-              <span style={{ color: '#64748b', fontSize: '0.95rem' }}>
-                Qualquer visitante pode publicar anotações.
-              </span>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginTop: '30px' }}>
+            {[
+              ['Posts publicados', posts.filter((post) => post.status === 'published').length],
+              ['Categorias', CATEGORIES.length - 1],
+              ['Comentarios', posts.reduce((total, post) => total + post.comments.length, 0)],
+              ['Em revisao', pendingCount]
+            ].map(([label, value]) => (
+              <div key={label} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: '8px', padding: '16px' }}>
+                <strong style={{ display: 'block', fontSize: '1.9rem' }}>{value}</strong>
+                <span style={{ color: '#dbeafe' }}>{label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </header>
 
-      {/* Main Layout */}
-      <main style={{
-        width: '92%',
-        maxWidth: '1500px',
-        margin: '35px auto',
-        display: 'grid',
-        gridTemplateColumns: window.innerWidth > 1100 ? '380px 1fr' : '1fr',
-        gap: '30px',
-        alignItems: 'start'
-      }}>
-        {/* Sidebar */}
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-          {/* Publishing Panel */}
-          <section style={{
-            background: 'white',
-            borderRadius: '24px',
-            padding: '28px',
-            boxShadow: '0 10px 30px rgba(15,23,42,0.06)',
-            border: '1px solid rgba(148,163,184,0.15)'
-          }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '22px', color: '#0f172a', fontWeight: '600' }}>
-              Publicar Anotação
-            </h2>
-
-            <div style={{ marginBottom: '18px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontWeight: '600', fontSize: '0.95rem' }}>
-                Nome do autor
-              </label>
-              <input
-                type="text"
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Digite seu nome"
+      <main style={{ width: '92%', maxWidth: '1280px', margin: '28px auto 48px' }}>
+        <section id="categorias" style={{ ...cardStyle, padding: '20px', marginBottom: '22px' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {CATEGORIES.map((item) => (
+              <button
+                key={item}
+                onClick={() => setActiveCategory(item)}
                 style={{
-                  width: '100%',
-                  border: '1px solid #dbe4ee',
-                  background: '#f8fbff',
-                  padding: '14px',
-                  borderRadius: '14px',
-                  fontSize: '0.98rem',
-                  color: '#0f172a'
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '18px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontWeight: '600', fontSize: '0.95rem' }}>
-                Título
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Digite o título da anotação"
-                style={{
-                  width: '100%',
-                  border: '1px solid #dbe4ee',
-                  background: '#f8fbff',
-                  padding: '14px',
-                  borderRadius: '14px',
-                  fontSize: '0.98rem',
-                  color: '#0f172a'
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '18px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontWeight: '600', fontSize: '0.95rem' }}>
-                Categoria
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                style={{
-                  width: '100%',
-                  border: '1px solid #dbe4ee',
-                  background: '#f8fbff',
-                  padding: '14px',
-                  borderRadius: '14px',
-                  fontSize: '0.98rem',
-                  color: '#0f172a'
+                  border: activeCategory === item ? '1px solid #2563eb' : '1px solid #dbe4ee',
+                  background: activeCategory === item ? '#2563eb' : 'white',
+                  color: activeCategory === item ? 'white' : '#334155',
+                  borderRadius: '999px',
+                  padding: '10px 14px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
                 }}
               >
-                <option>Infraestrutura Ferroviária</option>
-                <option>Logística</option>
-                <option>Mobilidade Urbana</option>
-                <option>Operações Ferroviárias</option>
-                <option>Projetos Ferroanel</option>
-                <option>Economia</option>
-                <option>Urbanismo</option>
-                <option>Pesquisa Técnica</option>
-              </select>
-            </div>
+                {item}
+              </button>
+            ))}
+          </div>
+        </section>
 
-            <div style={{ marginBottom: '18px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontWeight: '600', fontSize: '0.95rem' }}>
-                Anotação
-              </label>
+        <section className="blog-shell" style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 380px) 1fr', gap: '22px', alignItems: 'start' }}>
+          <aside style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+            <section id="publicar" style={{ ...cardStyle, padding: '22px' }}>
+              <h2 style={{ marginTop: 0 }}>Publicar anotacao</h2>
+              <label style={{ fontWeight: 700 }}>Nome do autor</label>
+              <input value={author} onChange={(event) => setAuthor(event.target.value)} placeholder="Digite seu nome" style={inputStyle} />
+
+              <label style={{ display: 'block', fontWeight: 700, marginTop: '14px' }}>Titulo</label>
+              <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Titulo da publicacao" style={inputStyle} />
+
+              <label style={{ display: 'block', fontWeight: 700, marginTop: '14px' }}>Categoria</label>
+              <select value={category} onChange={(event) => setCategory(event.target.value)} style={inputStyle}>
+                {CATEGORIES.filter((item) => item !== 'Todos').map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+
+              <label style={{ display: 'block', fontWeight: 700, marginTop: '14px' }}>Imagem opcional</label>
+              <input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="Cole uma URL de imagem" style={inputStyle} />
+
+              <label style={{ display: 'block', fontWeight: 700, marginTop: '14px' }}>Conteudo</label>
               <textarea
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Digite sua pesquisa, análise, estudo ou anotação sobre o Ferroanel..."
-                style={{
-                  width: '100%',
-                  border: '1px solid #dbe4ee',
-                  background: '#f8fbff',
-                  padding: '14px',
-                  borderRadius: '14px',
-                  fontSize: '0.98rem',
-                  color: '#0f172a',
-                  minHeight: '220px',
-                  resize: 'vertical',
-                  lineHeight: '1.8'
-                }}
+                onChange={(event) => setContent(event.target.value)}
+                placeholder="Escreva sua pesquisa, ideia, anotacao ou analise..."
+                style={{ ...inputStyle, minHeight: '170px', lineHeight: 1.7, resize: 'vertical' }}
               />
-            </div>
 
-            <button
-              onClick={publishPost}
-              style={{
-                width: '100%',
-                border: 'none',
-                padding: '16px',
-                borderRadius: '16px',
-                background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-                color: 'white',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              Publicar Anotação
-            </button>
-          </section>
+              <button
+                onClick={publishPost}
+                style={{
+                  marginTop: '16px',
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: '#2563eb',
+                  color: 'white',
+                  padding: '14px',
+                  fontSize: '1rem',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+              >
+                Publicar agora
+              </button>
+              <p style={{ color: '#64748b', lineHeight: 1.6 }}>
+                As publicacoes aparecem imediatamente e podem ser moderadas pelo administrador local.
+              </p>
+            </section>
 
-          {/* Info Box */}
-          <section style={{
-            background: 'linear-gradient(135deg, #eff6ff, #f8fafc)',
-            border: '1px solid #bfdbfe',
-            padding: '22px',
-            borderRadius: '20px',
-            lineHeight: '1.8',
-            color: '#334155'
-          }}>
-            <strong style={{ color: '#0f172a' }}>Publicação aberta</strong>
-            <br /><br />
+            <section id="moderacao" style={{ ...cardStyle, padding: '22px' }}>
+              <h2 style={{ marginTop: 0 }}>Moderacao</h2>
+              {!isAdmin ? (
+                <>
+                  <p style={{ color: '#64748b', lineHeight: 1.6 }}>
+                    Entre como administrador para ocultar, republicar ou excluir posts denunciados.
+                  </p>
+                  <input
+                    type="password"
+                    value={adminCode}
+                    onChange={(event) => setAdminCode(event.target.value)}
+                    placeholder="Codigo admin"
+                    style={inputStyle}
+                  />
+                  <button
+                    onClick={enterAdminMode}
+                    style={{ marginTop: '12px', width: '100%', border: '1px solid #2563eb', color: '#2563eb', background: 'white', borderRadius: '8px', padding: '12px', fontWeight: 800 }}
+                  >
+                    Entrar
+                  </button>
+                </>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {posts.filter((post) => post.reports > 0 || post.status !== 'published').length === 0 && (
+                    <p style={{ color: '#64748b' }}>Nenhum item pendente no momento.</p>
+                  )}
+                  {posts
+                    .filter((post) => post.reports > 0 || post.status !== 'published')
+                    .map((post) => (
+                      <div key={post.id} style={{ border: '1px solid #dbe4ee', borderRadius: '8px', padding: '12px' }}>
+                        <strong>{post.title}</strong>
+                        <p style={{ margin: '6px 0', color: '#64748b' }}>
+                          Status: {post.status} | Denuncias: {post.reports}
+                        </p>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <button onClick={() => updatePost(post.id, { status: 'published', reports: 0 })}>Publicar</button>
+                          <button onClick={() => updatePost(post.id, { status: 'hidden' })}>Ocultar</button>
+                          <button onClick={() => deletePost(post.id)}>Excluir</button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </section>
 
-            Qualquer visitante pode preencher o formulário e publicar uma nova anotação no blog.
+            <section style={{ ...cardStyle, padding: '22px', lineHeight: 1.7 }}>
+              <strong>Proximo passo tecnico</strong>
+              <p>
+                O app esta pronto para receber um banco online. Com Supabase ou Firebase, os posts passam a aparecer
+                para todos os visitantes em qualquer dispositivo.
+              </p>
+            </section>
+          </aside>
 
-            <br /><br />
+          <section id="posts" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+            <section style={{ ...cardStyle, padding: '18px' }}>
+              <input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Pesquisar por titulo, autor, categoria ou conteudo..."
+                style={inputStyle}
+              />
+            </section>
 
-            Nesta versão, as anotações ficam salvas no navegador de quem publicou. Para que as publicações apareçam para todos os visitantes em qualquer dispositivo, conecte o site a:
+            {featuredPost && (
+              <article style={{ ...cardStyle, overflow: 'hidden' }}>
+                {featuredPost.imageUrl && (
+                  <img src={featuredPost.imageUrl} alt={featuredPost.title} style={{ width: '100%', height: '280px', objectFit: 'cover' }} />
+                )}
+                <div style={{ padding: '24px' }}>
+                  <span style={{ background: '#dbeafe', color: '#1d4ed8', borderRadius: '999px', padding: '8px 12px', fontWeight: 800 }}>
+                    Destaque - {featuredPost.category}
+                  </span>
+                  <h2 style={{ fontSize: '2rem', lineHeight: 1.25 }}>{featuredPost.title}</h2>
+                  <p style={{ color: '#64748b' }}>Publicado por {featuredPost.author} em {featuredPost.date}</p>
+                  <p style={{ lineHeight: 1.9, whiteSpace: 'pre-line' }}>{featuredPost.content}</p>
+                  <PostActions post={featuredPost} onLike={likePost} onReport={reportPost} />
+                </div>
+              </article>
+            )}
 
-            <br /><br />
+            <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px' }}>
+              {recentPosts.map((post) => (
+                <article key={post.id} style={{ ...cardStyle, overflow: 'hidden' }}>
+                  {post.imageUrl && <img src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '170px', objectFit: 'cover' }} />}
+                  <div style={{ padding: '18px' }}>
+                    <span style={{ color: '#2563eb', fontWeight: 800 }}>{post.category}</span>
+                    <h3 style={{ fontSize: '1.35rem', lineHeight: 1.3 }}>{post.title}</h3>
+                    <p style={{ color: '#64748b' }}>Por {post.author} - {post.date}</p>
+                    <p style={{ lineHeight: 1.75, whiteSpace: 'pre-line' }}>{post.content}</p>
+                    <PostActions post={post} onLike={likePost} onReport={reportPost} />
 
-            • Firebase Firestore<br />
-            • Supabase<br />
-            • MySQL + PHP<br />
-            • Node.js + MongoDB
-
-            <br /><br />
-
-            Depois publique o site em plataformas como GitHub Pages, Netlify ou Vercel.
-          </section>
-        </aside>
-
-        {/* Feed */}
-        <section style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-          {/* Search */}
-          <section style={{
-            background: 'white',
-            borderRadius: '24px',
-            padding: '28px',
-            boxShadow: '0 10px 30px rgba(15,23,42,0.06)',
-            border: '1px solid rgba(148,163,184,0.15)',
-            display: 'flex',
-            gap: '15px',
-            alignItems: 'center'
-          }}>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Pesquisar anotações ferroviárias..."
-              style={{
-                flex: 1,
-                border: '1px solid #dbe4ee',
-                padding: '16px',
-                borderRadius: '18px',
-                background: 'white',
-                fontSize: '1rem'
-              }}
-            />
-          </section>
-
-          {/* Benefits Highlights */}
-          <section style={{
-            background: 'white',
-            borderRadius: '24px',
-            padding: '28px',
-            boxShadow: '0 10px 30px rgba(15,23,42,0.06)',
-            border: '1px solid rgba(148,163,184,0.15)'
-          }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '20px', color: '#0f172a', fontWeight: '600' }}>
-              Destaques Estratégicos do Ferroanel
-            </h2>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-              <div style={{
-                background: 'white',
-                padding: '18px 24px',
-                borderRadius: '18px',
-                boxShadow: '0 5px 15px rgba(0,0,0,0.06)'
-              }}>
-                <strong style={{ display: 'block', color: '#0f172a', fontSize: '1.2rem', marginBottom: '5px' }}>
-                  Redução de congestionamentos
-                </strong>
-                <span style={{ color: '#64748b', fontSize: '0.95rem' }}>
-                  O Ferroanel pode retirar parte dos trens cargueiros das áreas urbanas da Grande São Paulo.
-                </span>
-              </div>
-
-              <div style={{
-                background: 'white',
-                padding: '18px 24px',
-                borderRadius: '18px',
-                boxShadow: '0 5px 15px rgba(0,0,0,0.06)'
-              }}>
-                <strong style={{ display: 'block', color: '#0f172a', fontSize: '1.2rem', marginBottom: '5px' }}>
-                  Melhoria logística
-                </strong>
-                <span style={{ color: '#64748b', fontSize: '0.95rem' }}>
-                  Maior eficiência no transporte de cargas entre regiões industriais e portos.
-                </span>
-              </div>
-
-              <div style={{
-                background: 'white',
-                padding: '18px 24px',
-                borderRadius: '18px',
-                boxShadow: '0 5px 15px rgba(0,0,0,0.06)'
-              }}>
-                <strong style={{ display: 'block', color: '#0f172a', fontSize: '1.2rem', marginBottom: '5px' }}>
-                  Menor impacto urbano
-                </strong>
-                <span style={{ color: '#64748b', fontSize: '0.95rem' }}>
-                  Redução de conflitos ferroviários em áreas densamente povoadas.
-                </span>
-              </div>
-
-              <div style={{
-                background: 'white',
-                padding: '18px 24px',
-                borderRadius: '18px',
-                boxShadow: '0 5px 15px rgba(0,0,0,0.06)'
-              }}>
-                <strong style={{ display: 'block', color: '#0f172a', fontSize: '1.2rem', marginBottom: '5px' }}>
-                  Desenvolvimento econômico
-                </strong>
-                <span style={{ color: '#64748b', fontSize: '0.95rem' }}>
-                  Fortalecimento da economia paulista e atração de investimentos logísticos.
-                </span>
-              </div>
-            </div>
-          </section>
-
-          {/* Posts */}
-          <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {filteredPosts.length === 0 ? (
-              <div style={{
-                background: 'white',
-                padding: '70px 30px',
-                borderRadius: '24px',
-                textAlign: 'center',
-                color: '#64748b',
-                boxShadow: '0 10px 30px rgba(15,23,42,0.05)'
-              }}>
-                <h2 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>Nenhuma anotação encontrada</h2>
-                <br />
-                <p>Tente pesquisar outro termo ou publique novas informações.</p>
-              </div>
-            ) : (
-              [...filteredPosts].reverse().map((post, index) => (
-                <article
-                  key={index}
-                  style={{
-                    background: 'white',
-                    borderRadius: '24px',
-                    padding: '30px',
-                    boxShadow: '0 10px 30px rgba(15,23,42,0.05)',
-                    border: '1px solid rgba(148,163,184,0.14)'
-                  }}
-                >
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '15px',
-                    marginBottom: '20px'
-                  }}>
-                    <div style={{
-                      background: '#dbeafe',
-                      color: '#1d4ed8',
-                      padding: '8px 14px',
-                      borderRadius: '999px',
-                      fontSize: '0.85rem',
-                      fontWeight: '600'
-                    }}>
-                      {post.category}
+                    <div style={{ borderTop: '1px solid #e2e8f0', marginTop: '16px', paddingTop: '16px' }}>
+                      <strong>Comentarios ({post.comments.length})</strong>
+                      {post.comments.map((comment) => (
+                        <div key={comment.id} style={{ background: '#f8fafc', borderRadius: '8px', padding: '10px', marginTop: '10px' }}>
+                          <strong>{comment.author}</strong>
+                          <p style={{ margin: '4px 0', lineHeight: 1.5 }}>{comment.content}</p>
+                          <small style={{ color: '#64748b' }}>{comment.date}</small>
+                        </div>
+                      ))}
+                      <input
+                        value={commentDrafts[post.id]?.author || ''}
+                        onChange={(event) =>
+                          setCommentDrafts({ ...commentDrafts, [post.id]: { ...commentDrafts[post.id], author: event.target.value, content: commentDrafts[post.id]?.content || '' } })
+                        }
+                        placeholder="Seu nome"
+                        style={{ ...inputStyle, marginTop: '12px' }}
+                      />
+                      <textarea
+                        value={commentDrafts[post.id]?.content || ''}
+                        onChange={(event) =>
+                          setCommentDrafts({ ...commentDrafts, [post.id]: { author: commentDrafts[post.id]?.author || '', content: event.target.value } })
+                        }
+                        placeholder="Comente esta anotacao"
+                        style={{ ...inputStyle, minHeight: '82px', marginTop: '8px', resize: 'vertical' }}
+                      />
+                      <button onClick={() => addComment(post.id)} style={{ marginTop: '8px', border: '1px solid #2563eb', color: '#2563eb', background: 'white', borderRadius: '8px', padding: '10px 12px', fontWeight: 800 }}>
+                        Comentar
+                      </button>
                     </div>
-                    <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                      {post.date}
-                    </div>
-                  </div>
-
-                  <h3 style={{
-                    fontSize: '1.8rem',
-                    color: '#0f172a',
-                    marginBottom: '12px',
-                    lineHeight: '1.4',
-                    fontWeight: '600'
-                  }}>
-                    {post.title}
-                  </h3>
-
-                  <div style={{ marginBottom: '20px', color: '#475569', fontSize: '0.98rem' }}>
-                    Publicado por <strong>{post.author}</strong>
-                  </div>
-
-                  <div style={{
-                    lineHeight: '2',
-                    color: '#334155',
-                    fontSize: '1.02rem',
-                    whiteSpace: 'pre-line'
-                  }}>
-                    {post.content}
                   </div>
                 </article>
-              ))
+              ))}
+            </section>
+
+            {visiblePosts.length === 0 && (
+              <section style={{ ...cardStyle, padding: '46px', textAlign: 'center', color: '#64748b' }}>
+                <h2>Nenhuma publicacao encontrada</h2>
+                <p>Tente outra busca ou publique uma nova anotacao.</p>
+              </section>
             )}
           </section>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer style={{
-        marginTop: '50px',
-        padding: '30px',
-        textAlign: 'center',
-        color: '#64748b',
-        borderTop: '1px solid #dbe4ee',
-        background: 'white'
-      }}>
-        Ferroanel Hub - Plataforma ferroviária com publicação aberta - HTML + CSS + JavaScript
+      <footer style={{ padding: '28px', textAlign: 'center', background: '#0f172a', color: '#cbd5e1' }}>
+        Ferroanel Hub - Blog colaborativo com publicacao aberta, comentarios, categorias e moderacao local.
       </footer>
     </div>
   );
 }
 
-
+function PostActions({
+  post,
+  onLike,
+  onReport
+}: {
+  post: Post;
+  onLike: (postId: string) => void;
+  onReport: (postId: string) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '16px' }}>
+      <button onClick={() => onLike(post.id)} style={{ border: '1px solid #dbe4ee', background: 'white', borderRadius: '8px', padding: '10px 12px', cursor: 'pointer' }}>
+        Curtir ({post.likes})
+      </button>
+      <button onClick={() => onReport(post.id)} style={{ border: '1px solid #fca5a5', background: '#fff1f2', color: '#b91c1c', borderRadius: '8px', padding: '10px 12px', cursor: 'pointer' }}>
+        Denunciar ({post.reports})
+      </button>
+    </div>
+  );
+}
