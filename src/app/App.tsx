@@ -8,13 +8,6 @@ interface Post {
   date: string;
 }
 
-const AUTHORIZED_USERS = [
-  'Murilo',
-  'Administrador',
-  'Equipe Ferroanel',
-  'Editor Oficial'
-];
-
 const INITIAL_POSTS: Post[] = [
   {
     author: 'Administração',
@@ -58,15 +51,8 @@ export default function App() {
   }, []);
 
   const publishPost = () => {
-    const allowedUsers = AUTHORIZED_USERS.map(user => user.toLowerCase());
-
     if (!author.trim() || !title.trim() || !content.trim()) {
       alert('Preencha todos os campos.');
-      return;
-    }
-
-    if (!allowedUsers.includes(author.trim().toLowerCase())) {
-      alert('Você não possui permissão para publicar neste blog.');
       return;
     }
 
@@ -174,10 +160,10 @@ export default function App() {
               minWidth: '220px'
             }}>
               <strong style={{ display: 'block', color: '#0f172a', fontSize: '1.2rem', marginBottom: '5px' }}>
-                Publicação Restrita
+                Publicação Aberta
               </strong>
               <span style={{ color: '#64748b', fontSize: '0.95rem' }}>
-                Apenas autores autorizados podem publicar.
+                Qualquer visitante pode publicar anotações.
               </span>
             </div>
           </div>
@@ -196,7 +182,7 @@ export default function App() {
       }}>
         {/* Sidebar */}
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-          {/* Admin Panel */}
+          {/* Publishing Panel */}
           <section style={{
             background: 'white',
             borderRadius: '24px',
@@ -205,18 +191,18 @@ export default function App() {
             border: '1px solid rgba(148,163,184,0.15)'
           }}>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '22px', color: '#0f172a', fontWeight: '600' }}>
-              Painel Administrativo
+              Publicar Anotação
             </h2>
 
             <div style={{ marginBottom: '18px' }}>
               <label style={{ display: 'block', marginBottom: '8px', color: '#334155', fontWeight: '600', fontSize: '0.95rem' }}>
-                Usuário autorizado
+                Nome do autor
               </label>
               <input
                 type="text"
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Digite o usuário autorizado"
+                placeholder="Digite seu nome"
                 style={{
                   width: '100%',
                   border: '1px solid #dbe4ee',
@@ -315,7 +301,7 @@ export default function App() {
                 cursor: 'pointer'
               }}
             >
-              Publicar Anotação Oficial
+              Publicar Anotação
             </button>
           </section>
 
@@ -328,15 +314,14 @@ export default function App() {
             lineHeight: '1.8',
             color: '#334155'
           }}>
-            <strong style={{ color: '#0f172a' }}>Sistema de acesso restrito</strong>
+            <strong style={{ color: '#0f172a' }}>Publicação aberta</strong>
             <br /><br />
 
-            Atualmente o sistema utiliza uma lista local de usuários autorizados.
-            Somente nomes cadastrados pelo administrador conseguem publicar novas anotações.
+            Qualquer visitante pode preencher o formulário e publicar uma nova anotação no blog.
 
             <br /><br />
 
-            Para transformar isso em um sistema profissional com login real, conecte o site a:
+            Nesta versão, as anotações ficam salvas no navegador de quem publicou. Para que as publicações apareçam para todos os visitantes em qualquer dispositivo, conecte o site a:
 
             <br /><br />
 
@@ -539,8 +524,10 @@ export default function App() {
         borderTop: '1px solid #dbe4ee',
         background: 'white'
       }}>
-        Ferroanel Hub • Plataforma ferroviária com publicação restrita • HTML + CSS + JavaScript
+        Ferroanel Hub - Plataforma ferroviária com publicação aberta - HTML + CSS + JavaScript
       </footer>
     </div>
   );
 }
+
+
