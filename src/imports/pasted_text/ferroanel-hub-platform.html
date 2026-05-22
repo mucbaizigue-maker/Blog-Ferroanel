@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ferroanel Hub - Plataforma Ferroviária</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: #eef3f8;
+      color: #1e293b;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #ffffff, #dcefff);
+      padding: 50px 8%;
+      border-bottom: 1px solid #cbd5e1;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: auto;
+    }
+
+    header h1 {
+      font-size: 3rem;
+      color: #0f172a;
+      margin-bottom: 15px;
+    }
+
+    header p {
+      max-width: 900px;
+      line-height: 1.8;
+      color: #475569;
+      font-size: 1.05rem;
+    }
+
+    .hero-info {
+      margin-top: 25px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .hero-card {
+      background: white;
+      padding: 18px 24px;
+      border-radius: 18px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.06);
+      min-width: 220px;
+    }
+
+    .hero-card strong {
+      display: block;
+      color: #0f172a;
+      font-size: 1.2rem;
+      margin-bottom: 5px;
+    }
+
+    .hero-card span {
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+
+    .layout {
+      width: 92%;
+      max-width: 1500px;
+      margin: 35px auto;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 30px;
+      align-items: start;
+    }
+
+    .sidebar,
+    .feed {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(15,23,42,0.06);
+      border: 1px solid rgba(148,163,184,0.15);
+    }
+
+    .card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 22px;
+      color: #0f172a;
+    }
+
+    .input-group {
+      margin-bottom: 18px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #334155;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .input-group input,
+    .input-group textarea,
+    .input-group select {
+      width: 100%;
+      border: 1px solid #dbe4ee;
+      background: #f8fbff;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 0.98rem;
+      color: #0f172a;
+      transition: 0.25s;
+    }
+
+    .input-group input:focus,
+    .input-group textarea:focus,
+    .input-group select:focus {
+      outline: none;
+      border-color: #60a5fa;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(96,165,250,0.15);
+    }
+
+    .input-group textarea {
+      min-height: 220px;
+      resize: vertical;
+      line-height: 1.8;
+    }
+
+    .publish-btn {
+      width: 100%;
+      border: none;
+      padding: 16px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .publish-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(59,130,246,0.25);
+    }
+
+    .search-area {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .search-area input {
+      flex: 1;
+      border: 1px solid #dbe4ee;
+      padding: 16px;
+      border-radius: 18px;
+      background: white;
+      font-size: 1rem;
+    }
+
+    .posts {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .post {
+      background: white;
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(15,23,42,0.05);
+      border: 1px solid rgba(148,163,184,0.14);
+      transition: 0.3s;
+    }
+
+    .post:hover {
+      transform: translateY(-3px);
+    }
+
+    .post-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .category {
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .date {
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .post h3 {
+      font-size: 1.8rem;
+      color: #0f172a;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .author {
+      margin-bottom: 20px;
+      color: #475569;
+      font-size: 0.98rem;
+    }
+
+    .content {
+      line-height: 2;
+      color: #334155;
+      font-size: 1.02rem;
+      white-space: pre-line;
+    }
+
+    .info-box {
+      background: linear-gradient(135deg, #eff6ff, #f8fafc);
+      border: 1px solid #bfdbfe;
+      padding: 22px;
+      border-radius: 20px;
+      line-height: 1.8;
+      color: #334155;
+    }
+
+    .info-box strong {
+      color: #0f172a;
+    }
+
+    .empty-state {
+      background: white;
+      padding: 70px 30px;
+      border-radius: 24px;
+      text-align: center;
+      color: #64748b;
+      box-shadow: 0 10px 30px rgba(15,23,42,0.05);
+    }
+
+    footer {
+      margin-top: 50px;
+      padding: 30px;
+      text-align: center;
+      color: #64748b;
+      border-top: 1px solid #dbe4ee;
+      background: white;
+    }
+
+    @media(max-width: 1100px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      header h1 {
+        font-size: 2.3rem;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-content">
+
+    <h1>FERROANEL HUB</h1>
+
+    <p>
+      Portal moderno de estudos ferroviários voltado ao Ferroanel,
+      logística paulista, infraestrutura ferroviária e impactos econômicos.
+      A plataforma reúne análises técnicas, artigos especializados,
+      pesquisas logísticas e informações sobre o desenvolvimento ferroviário do Estado de São Paulo.
+    </p>
+
+    <div class="hero-info">
+
+      <div class="hero-card">
+        <strong>Logística Inteligente</strong>
+        <span>Estudos sobre eficiência ferroviária e transporte de cargas.</span>
+      </div>
+
+      <div class="hero-card">
+        <strong>Impactos Econômicos</strong>
+        <span>Análises sobre desenvolvimento regional e industrial.</span>
+      </div>
+
+      <div class="hero-card">
+        <strong>Infraestrutura</strong>
+        <span>Projetos ferroviários modernos e expansão logística.</span>
+      </div>
+
+      <div class="hero-card">
+        <strong>Publicação Restrita</strong>
+        <span>Apenas autores autorizados podem publicar.</span>
+      </div>
+
+    </div>
+
+  </div>
+</header>
+
+<main class="layout">
+
+  <aside class="sidebar">
+
+    <section class="card">
+
+      <h2>Painel Administrativo</h2>
+
+      <div class="input-group">
+        <label>Usuário autorizado</label>
+        <input type="text" id="author" placeholder="Digite o usuário autorizado" />
+      </div>
+
+      <div class="input-group">
+        <label>Título</label>
+        <input type="text" id="title" placeholder="Digite o título da anotação" />
+      </div>
+
+      <div class="input-group">
+        <label>Categoria</label>
+
+        <select id="category">
+          <option>Infraestrutura Ferroviária</option>
+          <option>Logística</option>
+          <option>Mobilidade Urbana</option>
+          <option>Operações Ferroviárias</option>
+          <option>Projetos Ferroanel</option>
+          <option>Economia</option>
+          <option>Urbanismo</option>
+          <option>Pesquisa Técnica</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Anotação</label>
+        <textarea id="content" placeholder="Digite sua pesquisa, análise, estudo ou anotação sobre o Ferroanel..."></textarea>
+      </div>
+
+      <button class="publish-btn" onclick="publishPost()">
+        Publicar Anotação Oficial
+      </button>
+
+    </section>
+
+    <section class="card info-box">
+
+      <strong>Sistema de acesso restrito</strong>
+      <br><br>
+
+      Atualmente o sistema utiliza uma lista local de usuários autorizados.
+      Somente nomes cadastrados pelo administrador conseguem publicar novas anotações.
+      
+      <br><br>
+
+      Para transformar isso em um sistema profissional com login real, conecte o site a:
+
+      <br><br>
+
+      • Firebase Firestore<br>
+      • Supabase<br>
+      • MySQL + PHP<br>
+      • Node.js + MongoDB
+
+      <br><br>
+
+      Depois publique o site em plataformas como GitHub Pages, Netlify ou Vercel.
+
+    </section>
+
+  </aside>
+
+  <section class="feed">
+
+    <section class="card search-area">
+      <input type="text" id="searchInput" placeholder="Pesquisar anotações ferroviárias..." onkeyup="searchPosts()" />
+    </section>
+
+    <section class="card">
+
+      <h2 style="margin-bottom:20px;">Destaques Estratégicos do Ferroanel</h2>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:20px;">
+
+        <div class="hero-card">
+          <strong>Redução de congestionamentos</strong>
+          <span>O Ferroanel pode retirar parte dos trens cargueiros das áreas urbanas da Grande São Paulo.</span>
+        </div>
+
+        <div class="hero-card">
+          <strong>Melhoria logística</strong>
+          <span>Maior eficiência no transporte de cargas entre regiões industriais e portos.</span>
+        </div>
+
+        <div class="hero-card">
+          <strong>Menor impacto urbano</strong>
+          <span>Redução de conflitos ferroviários em áreas densamente povoadas.</span>
+        </div>
+
+        <div class="hero-card">
+          <strong>Desenvolvimento econômico</strong>
+          <span>Fortalecimento da economia paulista e atração de investimentos logísticos.</span>
+        </div>
+
+      </div>
+
+    </section>
+
+    <section class="posts" id="postsContainer"></section>
+
+  </section>
+
+</main>
+
+<footer>
+  Ferroanel Hub • Plataforma ferroviária com publicação restrita • HTML + CSS + JavaScript
+</footer>
+
+<script>
+
+  const authorizedUsers = [
+    'Murilo',
+    'Administrador',
+    'Equipe Ferroanel',
+    'Editor Oficial'
+  ];
+
+  let posts = JSON.parse(localStorage.getItem('ferroanelPosts')) || [
+    {
+      author: 'Administração',
+      title: 'Como o Ferroanel pode transformar a logística paulista',
+      category: 'Logística',
+      content: 'O Ferroanel possui potencial para reorganizar o transporte ferroviário de cargas no Estado de São Paulo. Atualmente, muitos trens dividem espaço com linhas urbanas de passageiros, gerando conflitos operacionais e reduzindo a eficiência logística.
+
+Com a implantação do Ferroanel, o transporte de cargas poderá ser desviado das áreas urbanas, reduzindo congestionamentos ferroviários e melhorando a circulação de mercadorias entre regiões industriais e portos estratégicos.',
+      date: new Date().toLocaleString('pt-BR')
+    },
+    {
+      author: 'Equipe Ferroanel',
+      title: 'Benefícios econômicos do Ferroanel para São Paulo',
+      category: 'Economia',
+      content: 'O projeto do Ferroanel pode gerar impactos positivos significativos para a economia paulista. A melhoria da infraestrutura ferroviária reduz custos logísticos, aumenta a competitividade industrial e fortalece corredores de exportação.
+
+Além disso, o desenvolvimento ferroviário tende a estimular investimentos privados, expansão industrial e geração de empregos ligados ao setor logístico.',
+      date: new Date().toLocaleString('pt-BR')
+    },
+    {
+      author: 'Editor Oficial',
+      title: 'Impactos sociais e urbanos do Ferroanel',
+      category: 'Mobilidade Urbana',
+      content: 'A separação entre transporte urbano de passageiros e transporte ferroviário de cargas pode melhorar significativamente a mobilidade urbana da Região Metropolitana de São Paulo.
+
+O Ferroanel também pode reduzir riscos operacionais em áreas urbanas, diminuir interferências no trânsito e ampliar a eficiência do sistema ferroviário paulista.',
+      date: new Date().toLocaleString('pt-BR')
+    }
+  ];
+
+  function savePosts() {
+    localStorage.setItem('ferroanelPosts', JSON.stringify(posts));
+  }
+
+  function renderPosts(filteredPosts = posts) {
+
+    const container = document.getElementById('postsContainer');
+    container.innerHTML = '';
+
+    if(filteredPosts.length === 0) {
+
+      container.innerHTML = `
+        <div class="empty-state">
+          <h2>Nenhuma anotação encontrada</h2>
+          <br>
+          <p>Tente pesquisar outro termo ou publique novas informações.</p>
+        </div>
+      `;
+
+      return;
+    }
+
+    [...filteredPosts].reverse().forEach(post => {
+
+      const div = document.createElement('div');
+      div.className = 'post';
+
+      div.innerHTML = `
+
+        <div class="post-top">
+          <div class="category">${post.category}</div>
+          <div class="date">${post.date}</div>
+        </div>
+
+        <h3>${post.title}</h3>
+
+        <div class="author">
+          Publicado por <strong>${post.author}</strong>
+        </div>
+
+        <div class="content">
+          ${post.content}
+        </div>
+
+      `;
+
+      container.appendChild(div);
+
+    });
+
+  }
+
+  function publishPost() {
+
+    const allowedUsers = authorizedUsers.map(user => user.toLowerCase());
+
+    const author = document.getElementById('author').value.trim();
+    const title = document.getElementById('title').value.trim();
+    const category = document.getElementById('category').value;
+    const content = document.getElementById('content').value.trim();
+
+    if(!author || !title || !content) {
+      alert('Preencha todos os os campos.');
+      return;
+    }
+
+    if(!allowedUsers.includes(author.toLowerCase())) {
+      alert('Você não possui permissão para publicar neste blog.');
+      return;
+    }
+
+    const newPost = {
+      author,
+      title,
+      category,
+      content,
+      date: new Date().toLocaleString('pt-BR')
+    };
+
+    posts.push(newPost);
+
+    savePosts();
+    renderPosts();
+
+    document.getElementById('author').value = '';
+    document.getElementById('title').value = '';
+    document.getElementById('content').value = '';
+
+    alert('Anotação publicada com sucesso!');
+  }
+
+  function searchPosts() {
+
+    const term = document.getElementById('searchInput').value.toLowerCase();
+
+    const filtered = posts.filter(post =>
+      post.title.toLowerCase().includes(term) ||
+      post.content.toLowerCase().includes(term) ||
+      post.category.toLowerCase().includes(term) ||
+      post.author.toLowerCase().includes(term)
+    );
+
+    renderPosts(filtered);
+  }
+
+  renderPosts();
+
+</script>
+
+</body>
+</html>
